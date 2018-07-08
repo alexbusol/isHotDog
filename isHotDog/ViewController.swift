@@ -50,7 +50,14 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         let mlrequest = VNCoreMLRequest(model: model) { (request, error) in ///code in completion block - when the request completed.need to process the results
             guard let results = request.results as? [VNClassificationObservation] else { fatalError("Error processing an image") } //holds classification observations after the model has been run
             
-            print(results)
+            //print(results) -- prints the image processing results to the console
+            if let firstResult = results.first {
+                if firstResult.identifier.contains("hotdog") { //now we can check if an image is a hotdog.
+                    self.navigationItem.title = "Hotdog!"
+                } else {
+                    self.navigationItem.title = "Not Hotdog!"
+                }
+            }
         }
         
         let handler = VNImageRequestHandler(ciImage: image)
