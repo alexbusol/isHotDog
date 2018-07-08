@@ -8,7 +8,7 @@
 
 import UIKit
 import CoreML
-import Vision //helps to process images more easily.
+import Vision //allows us to process images using a selected CoreML model
 
 class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
@@ -28,11 +28,38 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) { //trigers once the user picked an image to work with.
         if  let userImage = info[UIImagePickerControllerOriginalImage] as? UIImage {//access the image that the user has taken
             imageFromCamera.image = userImage
+            
+            //convert ui image into CIimage, which stands for core image. used by core ml
+            guard let ciimage = CIImage(image: userImage) else {
+                fatalError("Could not convert UIImage to CIIimage")
+            }
+            
+            detect(image: ciimage) //pass the image from the gallery for ML classification. at this point, the model will return a bunch of classifications with different levels of confidence.
         }
         
         imagePicker.dismiss(animated: true, completion: nil)
     }
     
+    func detect(image: CIImage) {
+        //will use InceptionV3 Model
+
+        guard let model = try? VNCoreMLModel(for: Inceptionv3().model) else { //new object of inception v3. getting its model properties loaded.
+            fatalError("Loading InceptionV3 CoreML model failed")
+        }
+        
+        let mlrequest = VNCoreMLRequest(model: model) { (request, error) in ///code in completion block - when the request completed.need to process the results
+            guard let results = request.results as? [VNClassificationObservation] else { fatalError("Error processing an image") } //holds classification observations after the model has been run
+            
+            print(results)
+        }
+        
+        let handler = VNImageRequestHandler(ciImage: image)
+        do {
+        try handler.perform([mlrequest])
+        } catch {
+            print("\(error)")
+        }
+    }
     
     @IBAction func cameraPressed(_ sender: UIBarButtonItem) {
         present(imagePicker, animated: true, completion: nil)
